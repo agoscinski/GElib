@@ -1,0 +1,49 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    # Check all PR
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-20.04']
+        python-version: ['3.10']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install GElib dependencies
+        run: |
+          # torch cpu version
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu torch
+          # cnine
+          ## needs to be installed in environment mode
+          ## in same directory level as GElib
+          cd ..
+          git clone https://github.com/risi-kondor/cnine.git
+          cd cnine/python
+          pip install -e . 
+          cd ../../GElib  
+          # GElib
+          cd python
+          pip install -e .
+          cd ..
+    - name: Install test dependencies
+        run: |
+          pip install numpy scipy
+          # pytest
+          pip install pytest
+    - name: Run tests
+        run: |
+          pytest python/tests
+          pytest --doctest-modules --pyargs gelib
